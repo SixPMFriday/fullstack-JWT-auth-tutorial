@@ -1,0 +1,160 @@
+JWT Authentication Tutorial
+------------------------------------------------------------------------
+
+Based on: https://www.youtube.com/watch?v=25GS0MLT8JU
+
+Technologies
+* Typescript
+* GraphQL
+* TypeGraphQL
+* TypeORM
+* React
+* Apollo
+
+
+Will store the access token in-memory
+Build a back-end and front-end, see how they interact
+TypeGraphQL lets us easily integrate typescript and graphql on back end
+React and Apollo will tie everything together
+Apollo will make requests in react and host a NodeJS server
+
+
+Backend:
+1. Setup a GraphQL Server using TypeGraphQL and TypeORM
+2. Register a user
+3. Login and create access and refresh tokens
+4. Authenticated mutations/queries (protect routes)
+5. Refresh the token (if expires)
+6. Revoke tokens for a user (i.e. if a user logs out)
+
+Frontend:
+1. Setup Apollo and GraphQL Code Generator
+2. React Router
+3. Register/Login
+4. Persisting session on refresh
+5. Handling expired tokens
+6. Fetching current user in header, etc... (displaying user info on page)
+
+
+
+
+
+1. Setup a GraphQL Server using TypeGraphQL and TypeORM
+------------------------------------------------------------------------
+
+-- Install TypeORM CLI (also node if you don't have)
+
+   npm i -g typeorm
+
+-- Create folder "server" with some boilerplate code for TypeORM
+-- Specifies DB, but nothing here is database specific
+
+   typeorm init --name server --database postgres
+
+-- Update server/tsconfig.json
+-- Downloads and installs commandline tool which provides tsconfig for react, react-native, and node
+
+   cd server
+   npx tsconfig.json
+   (select node)
+
+-- Update all dependencies in package.json 
+-- (first install yarn, can use this any time package.json is out-of-date)
+
+   yarn
+   yarn upgrage-interactive --latest
+
+-- Set up database
+-- Add db name to ormconfig.json and update db username and password 
+
+   *Added postgresdb folder with dockerfile
+   *Ran commands in postgresdb/notes.txt
+
+-- Run server! Start script specified in package.json, creates a sample user
+-- Should work after db is set up 
+
+   cd server
+   yarn start
+
+   -- Adds user with id: 1, firstName: Timber, lastName: Saw, age:25
+   -- SELECT * FROM "jwt-auth-example"."public"."user";
+
+
+-- Set up GraphQL Server
+-- Install dependencies
+
+   cd server
+   yarn add express apollo-server-express graphql
+
+-- Install types, need this for Typescript stuff
+-- (-D indicates add as a dev dependency)
+-- (apollo has types already and package.json shows we already have "@types/node)
+
+   yarn add -D @types/express @types/graphql 
+
+-- Update server\index.ts to include express and create an express app 
+-- inside an async-marked lambda function. Integrate the GraphQL portion.
+
+-- Visit localhost:4000/graphql to see the query interface which allows you to test queries
+-- (playground to run queries and test results)
+-- Try: "{hello}"
+
+-- Set up TypeGraphQL
+
+   yarn add type-graphql
+   -- Add UserResolver.ts
+
+
+
+
+2. Register a user
+------------------------------------------------------------------------
+
+With typeorm, we can define our database with typescript code. 
+
+A table is represented as a class which extends BaseEntity, where each field 
+maps to a database column.
+
+ORM Config:
+   - Specifies ORM mapping (for each class in src/entities)
+   - Synchronize=true make it so table will automatically be created for you
+
+
+Add encryption to store password.
+
+   yarn add bcryptjs                // install dependencies
+   yarn add -D @types/bcryptjs      // add typescript types
+   -- Modify UserResolver
+
+Enable hot-reloading with nodemon (Add as dev dependency)
+
+   yarn add -D nodemon
+   -- add "nodemon --exec " in front of start script in package.json
+
+
+   
+3. Login and create access and refresh tokens
+------------------------------------------------------------------------
+When logging in, provide user with access and refresh tokens.
+
+Create new mutation (login) in UserResolver which checks user logjn exists
+and password is valid, then returns access token.
+
+   yarn add jsonwebtoken
+   yarn add -D @types/jsonwebtoken
+
+   -- This step requires a secret key, which should be stored in server env variables
+
+Add refresh token (stored in a cookie)
+
+Create "MyContext.ts"
+Create "auth.ts"
+Create ".env"
+   yarn add dotenv
+
+Adding:
+   import "dotenv/config" 
+Will read-in the two variables defined in .env file
+To access
+
+Now, we can create protected routes
